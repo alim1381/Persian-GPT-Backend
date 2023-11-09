@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const verifyToken = require("../auth/verifyToken");
 
 // auth routes
 router.use("/auth", require("./auth"));
 
-
+router.use(verifyToken);
 router.use("/message", require("./message"));
 
 // error handler

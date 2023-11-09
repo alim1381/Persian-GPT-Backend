@@ -8,20 +8,30 @@ const openai = new OpenAI({
 
 class MessageController extends Controller {
   // last messages
-  getLastMessages(req, res) {
+  async getLastMessages(req, res, next) {
     try {
+      // query : ?page=1
+      // pagination 20 message in a page
+      const pageSize = 20;
+      let posts = await Message.find({ userId: req.userData._id })
+        .sort({ createdAt: -1 })
+        .skip(req.query.page ? pageSize * req.query.page - pageSize : 0)
+        .limit(req.query.page ? pageSize : 0)
+        .select("-updatedAt -__v -userId");
+
+      res.status(200).json(posts);
     } catch (error) {
       next(error);
     }
   }
   // create new message
-  async newMessage(req, res) {
+  async newMessage(req, res, next) {
     try {
       // create user new message
       let userNewMessage = new Message({
-        text: req.body.text,
+        text: req.body.quiz,
         userId: req.userData._id,
-        aiSide: true,
+        aiSide: false,
       });
 
       // call open ai API
@@ -39,10 +49,11 @@ class MessageController extends Controller {
 
       // save messages in DB
       await userNewMessage.save();
+
+      // save messages in DB and send response
       aiNewMessage.save().then((result) => {
         res.status(201).json({
           text: result.text,
-          userId: req.userData._id,
           aiSide: true,
         });
       });
