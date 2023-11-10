@@ -10,12 +10,16 @@ class MessageController extends Controller {
   // last messages
   async getLastMessages(req, res, next) {
     try {
-      // query : ?page=1
+      // query : ?page=1&newMessages=2
       // pagination 20 message in a page
       const pageSize = 20;
       let posts = await Message.find({ userId: req.userData._id })
         .sort({ createdAt: -1 })
-        .skip(req.query.page ? pageSize * req.query.page - pageSize : 0)
+        .skip(
+          req.query.page
+            ? pageSize * req.query.page - pageSize + req.query.newMessage
+            : 0
+        )
         .limit(req.query.page ? pageSize : 0)
         .select("-updatedAt -__v -userId");
 

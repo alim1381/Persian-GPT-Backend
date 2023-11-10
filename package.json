@@ -15,6 +15,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.0",
     "nodemon": "^3.0.1",
-    "openai": "^4.17.1"
+    "openai": "^4.17.1",
+    "twilio": "^4.19.0"
   }
 }

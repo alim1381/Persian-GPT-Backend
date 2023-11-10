@@ -2,6 +2,7 @@ const Controller = require("./controller");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const sult = 10;
+const jwt = require("jsonwebtoken");
 const generateToken = require("../auth/generateToken");
 
 class AuthController extends Controller {
@@ -101,6 +102,49 @@ class AuthController extends Controller {
           });
         });
       }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // refresh Token
+  async refreshToken(req, res, next) {
+    try {
+      const refreshToken = req.headers["refresh"];
+      jwt.verify(
+        refreshToken,
+        process.env.TOKEN_SECRET_KEY,
+        async (err, data) => {
+          if (err) {
+            // if error send 403 response
+            res.status(403).json({
+              message: "توکن منقضی شده",
+              success: false,
+            });
+          } else {
+            // find user from DB
+            let user = await User.findById(data.id);
+            if (user) {
+              // generate new access token and refresh token
+              const newToken = await generateToken(user._id, "1h");
+              const newRefreshToken = await generateToken(user._id, "2h");
+
+              // send response
+              res.status(201).json({
+                token: newToken,
+                refreshToken: newRefreshToken,
+                message: "توکن جدید با موفقیت ساخته شد",
+                success: true,
+              });
+            } else {
+              res.status(403).json({
+                message: "توکن وارد شده نامعتبر میباشد",
+                success: false,
+              });
+            }
+          }
+        }
+      );
     } catch (error) {
       next(error);
     }
