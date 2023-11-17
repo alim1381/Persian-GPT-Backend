@@ -10,7 +10,6 @@ class AuthController extends Controller {
   async login(req, res, next) {
     try {
       let user = await User.findOne({ phone: req.body.phone });
-
       // check for exist phone number
       if (!user) {
         res.status(404).json({
@@ -22,8 +21,7 @@ class AuthController extends Controller {
       // check for password is correct
       if (await bcrypt.compare(req.body.password, user.password)) {
         // generate Token
-        const token = await generateToken(user._id, "1h");
-        const refreshToken = await generateToken(user._id, "2h");
+        const token = await generateToken(user._id, "4d");
 
         // send response ok
         res.status(200).json({
@@ -34,7 +32,6 @@ class AuthController extends Controller {
             credit: user.credit,
             phoneVerify: user.phoneVerify,
             token: token,
-            refreshToken: refreshToken,
           },
           message: "با موفقیت وارد شدید",
           success: true,
@@ -83,8 +80,7 @@ class AuthController extends Controller {
         // save in DB
         newUser.save().then(async (result) => {
           // generate Token
-          const token = await generateToken(result._id, "1h");
-          const refreshToken = await generateToken(result._id, "2h");
+          const token = await generateToken(result._id, "4d");
 
           // send response ok
           res.status(201).json({
@@ -95,7 +91,6 @@ class AuthController extends Controller {
               credit: result.credit,
               phoneVerify: result.phoneVerify,
               token: token,
-              refreshToken: refreshToken,
             },
             message: "کاربر جدید با موفقیت ایجاد شد",
             success: true,
@@ -107,44 +102,35 @@ class AuthController extends Controller {
     }
   }
 
-  // refresh Token
-  async refreshToken(req, res, next) {
+  async verifyToken(req, res, next) {
     try {
-      const refreshToken = req.headers["refresh"];
-      jwt.verify(
-        refreshToken,
-        process.env.TOKEN_SECRET_KEY,
-        async (err, data) => {
-          if (err) {
-            // if error send 403 response
+      const bearerHeader = req.headers["authorization"];
+      if (typeof bearerHeader !== "undefined") {
+        const bearer = bearerHeader.split(" ");
+        const token = bearer[1];
+        const tokenDecoded = await jwt.verify(
+          token,
+          process.env.TOKEN_SECRET_KEY
+        );
+        if (tokenDecoded) {
+          const findUser = await User.findById({ _id: tokenDecoded.id });
+          if (findUser) {
+            res.status(200).json({
+              id: findUser._id,
+              name: findUser.name,
+              phone: findUser.phone,
+              credit: findUser.credit,
+              phoneVerify: findUser.phoneVerify,
+              token: token,
+            });
+          } else {
             res.status(403).json({
               message: "توکن منقضی شده",
               success: false,
             });
-          } else {
-            // find user from DB
-            let user = await User.findById(data.id);
-            if (user) {
-              // generate new access token and refresh token
-              const newToken = await generateToken(user._id, "1h");
-              const newRefreshToken = await generateToken(user._id, "2h");
-
-              // send response
-              res.status(201).json({
-                token: newToken,
-                refreshToken: newRefreshToken,
-                message: "توکن جدید با موفقیت ساخته شد",
-                success: true,
-              });
-            } else {
-              res.status(403).json({
-                message: "توکن وارد شده نامعتبر میباشد",
-                success: false,
-              });
-            }
           }
         }
-      );
+      }
     } catch (error) {
       next(error);
     }
