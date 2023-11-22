@@ -18,7 +18,8 @@ class MessageController extends Controller {
         .sort({ createdAt: -1 })
         .skip(
           req.query.page
-            ? parseInt(pageSize * req.query.page - pageSize) + parseInt(req.query.newMessage)
+            ? parseInt(pageSize * req.query.page - pageSize) +
+                parseInt(req.query.newMessage)
             : 0
         )
         .limit(req.query.page ? pageSize : 0)
@@ -75,16 +76,14 @@ class MessageController extends Controller {
           _id: req.userData._id,
           $set: { credit: req.userData.credit - 1 },
         }).then((update) => {
-          setTimeout(() => {
-            res.status(201).json({
-              answer: { text: result.text, aiSide: true },
-              currentCredit: req.userData.credit - 1,
-            });
-          }, 2000);
+          res.status(201).json({
+            answer: { text: result.text, aiSide: true },
+            currentCredit: req.userData.credit - 1,
+          });
         });
       });
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         message: "خطا در برقراری ارتباط با مبدا",
         success: false,
       });

@@ -53,7 +53,7 @@ class AuthController extends Controller {
     try {
       // check for valid phone number
       if (req.body.phone.length !== 11) {
-        res.status(400).json({
+        return res.status(400).json({
           message: "شماره تلفن وارد شده معتبر نمیباشد",
           success: false,
         });
@@ -64,7 +64,7 @@ class AuthController extends Controller {
 
       // check for find phone number in DB
       if (findUser) {
-        res.status(409).json({
+        return res.status(409).json({
           message: "کاربر دیگری با این شماره در سیستم موجود میباشد",
           success: false,
         });

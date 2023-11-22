@@ -12,9 +12,16 @@ router.use(tokenSeparator, (req, res, next) => {
         success: false,
       });
     } else {
-      let user = await User.findById(authData.id);
-      req.userData = user;
-      next();
+      try {
+        let user = await User.findById(authData.id);
+        req.userData = user;
+        next();
+      } catch (error) {
+        res.status(403).json({
+          message: "توکن منقضی شده",
+          success: false,
+        });
+      }
     }
   });
 });
